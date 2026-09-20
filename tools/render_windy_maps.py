@@ -20,10 +20,10 @@ from playwright.sync_api import sync_playwright
 
 LAT = float(os.getenv("WINDY_MAP_LAT", "30.687"))
 LON = float(os.getenv("WINDY_MAP_LON", "30.210"))
-ZOOM = float(os.getenv("WINDY_MAP_ZOOM", "7"))
+ZOOM = float(os.getenv("WINDY_MAP_ZOOM", "6"))
 WIDTH = int(os.getenv("WINDY_MAP_WIDTH", "1400"))
 HEIGHT = int(os.getenv("WINDY_MAP_HEIGHT", "760"))
-WAIT_MS = int(os.getenv("WINDY_MAP_WAIT_MS", "15000"))
+WAIT_MS = int(os.getenv("WINDY_MAP_WAIT_MS", "25000"))
 OUT = Path(os.getenv("WINDY_OUTPUT_DIR", "weather-maps"))
 MIN_BYTES = int(os.getenv("WINDY_MIN_IMAGE_BYTES", "10000"))
 
@@ -50,9 +50,20 @@ LAYERS = {
 _HIDE_SELECTORS = [
     "#embed-left",      # left search/location panel, if present
     "#mobile-search",
+    "#social",
+    # Standard Leaflet corner-control containers (Windy's map is Leaflet-
+    # based) - catches the zoom +/- buttons, the layer-name picker pill,
+    # the playback/timeline bar, and the attribution text seen in testing,
+    # without needing Windy's exact (and likely obfuscated) class names.
+    # The Windy.com logo is centered at the top, NOT in a corner, so this
+    # never removes the required "source: windy.com" attribution.
+    ".leaflet-top.leaflet-left",
+    ".leaflet-top.leaflet-right",
+    ".leaflet-bottom.leaflet-left",
+    ".leaflet-bottom.leaflet-right",
     ".leaflet-control-zoom",
     ".leaflet-control-layers",
-    "#social",
+    ".leaflet-control-attribution",
 ]
 
 
@@ -95,10 +106,6 @@ def main():
 
             last_error = None
             for attempt in range(2):
-                # A fresh, isolated context per layer (no shared cookies,
-                # localStorage, or cache) - rules out the widget "remembering"
-                # a previous layer's view state and ignoring this URL's
-                # lat/lon/zoom/overlay params.
                 context = browser.new_context(
                     viewport={"width": WIDTH, "height": HEIGHT},
                     device_scale_factor=1,
@@ -123,7 +130,6 @@ def main():
                 raise RuntimeError("Failed to render layer '%s' after retries: %s" % (layer, last_error))
         browser.close()
 
-    # Machine-readable freshness marker consumed by reports/windy_maps.py.
     (OUT / "generated_at_utc.txt").write_text(
         generated.isoformat().replace("+00:00", "Z") + "\n", encoding="utf-8"
     )
