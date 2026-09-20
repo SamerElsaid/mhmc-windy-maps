@@ -95,7 +95,7 @@ def main():
             target_tmp = OUT / (".%s.tmp.png" % layer)
             url = windy_url(layer)
             print("Rendering %s: %s" % (layer, url))
-            page.goto(url, wait_until="networkidle", timeout=90000)
+            page.goto(url, wait_until="load", timeout=60000)
             page.wait_for_timeout(WAIT_MS)
             _hide_extra_chrome(page)
             page.screenshot(path=str(target_tmp), full_page=False)
