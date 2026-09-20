@@ -39,7 +39,7 @@ jobs:
           WINDY_MAP_ZOOM: '5'
           WINDY_MAP_WIDTH: '1400'
           WINDY_MAP_HEIGHT: '760'
-          WINDY_MAP_WAIT_MS: '15000'
+          WINDY_MAP_WAIT_MS: '25000'
           WINDY_OUTPUT_DIR: weather-maps
           WINDY_MIN_IMAGE_BYTES: '10000'
         run: python tools/render_windy_maps.py
