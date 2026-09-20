@@ -18,8 +18,8 @@ from pathlib import Path
 from datetime import datetime, timezone
 from playwright.sync_api import sync_playwright
 
-LAT = float(os.getenv("WINDY_MAP_LAT", "30.118"))
-LON = float(os.getenv("WINDY_MAP_LON", "31.572"))
+LAT = float(os.getenv("WINDY_MAP_LAT", "30.687"))
+LON = float(os.getenv("WINDY_MAP_LON", "30.210"))
 ZOOM = int(os.getenv("WINDY_MAP_ZOOM", "6"))
 WIDTH = int(os.getenv("WINDY_MAP_WIDTH", "1400"))
 HEIGHT = int(os.getenv("WINDY_MAP_HEIGHT", "760"))
