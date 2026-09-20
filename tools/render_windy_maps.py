@@ -20,7 +20,7 @@ from playwright.sync_api import sync_playwright
 
 LAT = float(os.getenv("WINDY_MAP_LAT", "30.687"))
 LON = float(os.getenv("WINDY_MAP_LON", "30.210"))
-ZOOM = int(os.getenv("WINDY_MAP_ZOOM", "8"))
+ZOOM = float(os.getenv("WINDY_MAP_ZOOM", "6"))
 WIDTH = int(os.getenv("WINDY_MAP_WIDTH", "1400"))
 HEIGHT = int(os.getenv("WINDY_MAP_HEIGHT", "760"))
 WAIT_MS = int(os.getenv("WINDY_MAP_WAIT_MS", "15000"))
@@ -86,10 +86,7 @@ def main():
 
     with sync_playwright() as p:
         browser = p.chromium.launch(args=["--disable-dev-shm-usage"])
-        page = browser.new_page(
-            viewport={"width": WIDTH, "height": HEIGHT},
-            device_scale_factor=1,
-        )
+
         for layer in LAYERS:
             target = OUT / ("windy_%s.png" % layer)
             target_tmp = OUT / (".%s.tmp.png" % layer)
@@ -98,6 +95,15 @@ def main():
 
             last_error = None
             for attempt in range(2):
+                # A fresh, isolated context per layer (no shared cookies,
+                # localStorage, or cache) - rules out the widget "remembering"
+                # a previous layer's view state and ignoring this URL's
+                # lat/lon/zoom/overlay params.
+                context = browser.new_context(
+                    viewport={"width": WIDTH, "height": HEIGHT},
+                    device_scale_factor=1,
+                )
+                page = context.new_page()
                 try:
                     page.goto(url, wait_until="load", timeout=60000)
                     page.wait_for_timeout(WAIT_MS)
@@ -111,6 +117,8 @@ def main():
                 except Exception as e:
                     last_error = e
                     print("  attempt %d for %s failed: %s" % (attempt + 1, layer, e))
+                finally:
+                    context.close()
             if last_error is not None:
                 raise RuntimeError("Failed to render layer '%s' after retries: %s" % (layer, last_error))
         browser.close()
