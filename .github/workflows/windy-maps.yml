@@ -36,7 +36,7 @@ jobs:
         env:
           WINDY_MAP_LAT: '29.8'
           WINDY_MAP_LON: '31.0'
-          WINDY_MAP_ZOOM: '5'
+          WINDY_MAP_ZOOM: '6'
           WINDY_MAP_WIDTH: '1400'
           WINDY_MAP_HEIGHT: '760'
           WINDY_MAP_WAIT_MS: '25000'
