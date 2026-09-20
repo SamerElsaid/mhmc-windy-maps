@@ -95,13 +95,24 @@ def main():
             target_tmp = OUT / (".%s.tmp.png" % layer)
             url = windy_url(layer)
             print("Rendering %s: %s" % (layer, url))
-            page.goto(url, wait_until="load", timeout=60000)
-            page.wait_for_timeout(WAIT_MS)
-            _hide_extra_chrome(page)
-            page.screenshot(path=str(target_tmp), full_page=False)
-            if target_tmp.stat().st_size < MIN_BYTES:
-                raise RuntimeError("Suspiciously small screenshot: %s" % target_tmp)
-            target_tmp.replace(target)
+
+            last_error = None
+            for attempt in range(2):
+                try:
+                    page.goto(url, wait_until="load", timeout=60000)
+                    page.wait_for_timeout(WAIT_MS)
+                    _hide_extra_chrome(page)
+                    page.screenshot(path=str(target_tmp), full_page=False)
+                    if target_tmp.stat().st_size < MIN_BYTES:
+                        raise RuntimeError("Suspiciously small screenshot: %s" % target_tmp)
+                    target_tmp.replace(target)
+                    last_error = None
+                    break
+                except Exception as e:
+                    last_error = e
+                    print("  attempt %d for %s failed: %s" % (attempt + 1, layer, e))
+            if last_error is not None:
+                raise RuntimeError("Failed to render layer '%s' after retries: %s" % (layer, last_error))
         browser.close()
 
     # Machine-readable freshness marker consumed by reports/windy_maps.py.
