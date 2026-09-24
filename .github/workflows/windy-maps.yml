@@ -54,7 +54,7 @@ jobs:
           git config user.name 'MHMC Windy Renderer'
           git config user.email 'actions@users.noreply.github.com'
           git checkout --orphan maps-publish
-          git rm -r -q --cached .
+          git rm -r -q --cached -f .
           git add weather-maps
           git commit -q -m "MHMC Windy weather maps $(date -u +%Y-%m-%dT%H:%MZ)"
           git push --force origin maps-publish:maps
