@@ -52,7 +52,7 @@ LAYERS = {
     # 2026-09-24 report). Both of these are documented Windy overlay values;
     # if the embed ever falls back to Wind for them anyway, the similarity
     # check below drops them instead of publishing a mislabeled map.
-    "swellperiod": "swellperiod",
+    "rh": "rh",
     "gust": "gust",
 }
 
