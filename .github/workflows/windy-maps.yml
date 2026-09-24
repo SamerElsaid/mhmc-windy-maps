@@ -1,0 +1,60 @@
+name: Render MHMC Windy Weather Maps
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 05:30 UTC = 07:30 Egypt time. Report cron is 08:05 Egypt.
+    - cron: '30 5 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mhmc-windy-maps
+  cancel-in-progress: true
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Playwright and Chromium
+        run: |
+          python -m pip install --upgrade pip
+          pip install playwright==1.55.0 pillow
+          playwright install --with-deps chromium
+
+      - name: Render Windy maps
+        env:
+          # Map centre and zoom are set HERE (these override the script's defaults).
+          # Zoom 6 shows all of Egypt; 7 zooms in but cuts off southern Egypt.
+          WINDY_MAP_LAT: '30.687'
+          WINDY_MAP_LON: '30.210'
+          WINDY_MAP_ZOOM: '6'
+          WINDY_MAP_WIDTH: '1400'
+          WINDY_MAP_HEIGHT: '760'
+          WINDY_MAP_WAIT_MS: '25000'
+          WINDY_OUTPUT_DIR: weather-maps
+          WINDY_MIN_IMAGE_BYTES: '10000'
+        run: python tools/render_windy_maps.py
+
+      # Publish ONLY the latest maps, as a single commit force-pushed to the
+      # 'maps' branch. Committing ~24 MB of PNGs to main on every run made the
+      # repository grow without limit; this keeps it at one set of maps.
+      - name: Publish maps to the 'maps' branch (latest only, no history)
+        run: |
+          git config user.name 'MHMC Windy Renderer'
+          git config user.email 'actions@users.noreply.github.com'
+          git checkout --orphan maps-publish
+          git rm -r -q --cached .
+          git add weather-maps
+          git commit -q -m "MHMC Windy weather maps $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push --force origin maps-publish:maps
