@@ -46,6 +46,13 @@ jobs:
           WINDY_MIN_IMAGE_BYTES: '10000'
         run: python tools/render_windy_maps.py
 
+      # Independent of Windy - a plain text-file fetch, no browser needed.
+      # continue-on-error: a brief NGL outage must never block the Windy
+      # maps (or the rest of this workflow) from publishing.
+      - name: Fetch NGL GNSS velocities (measured crustal motion, East Med)
+        continue-on-error: true
+        run: python tools/fetch_ngl_velocities.py
+
       # Publish ONLY the latest maps, as a single commit force-pushed to the
       # 'maps' branch. Committing ~24 MB of PNGs to main on every run made the
       # repository grow without limit; this keeps it at one set of maps.
@@ -56,5 +63,6 @@ jobs:
           git checkout --orphan maps-publish
           git rm -r -q --cached -f .
           git add weather-maps
+          if [ -d gnss ]; then git add gnss; fi
           git commit -q -m "MHMC Windy weather maps $(date -u +%Y-%m-%dT%H:%MZ)"
           git push --force origin maps-publish:maps
