@@ -57,10 +57,12 @@ def parse_midas_line(line):
     except (ValueError, IndexError):
         return None
 
-    # Longitude in this file can be 0-360 (west stations show as e.g. 340
-    # instead of -20) - normalize to -180..180 before the bounding-box check.
-    if lon > 180:
-        lon -= 360
+    # NGL writes longitudes in several conventions: -180..180, 0..360, and
+    # -360..0 (e.g. Alexandria ALX2 is "-330.089", i.e. 29.911 E). Normalize
+    # all of them to -180..180 before the bounding-box check.
+    lon = ((lon + 180.0) % 360.0 + 360.0) % 360.0 - 180.0
+    if not (-90.0 <= lat <= 90.0):
+        return None
 
     # A MIDAS fit occasionally diverges on a short/gappy series and reports
     # an implausible plate velocity (tens of cm/yr) - drop those rather than
@@ -69,7 +71,7 @@ def parse_midas_line(line):
         return None
 
     return {
-        "station": station, "lat": lat, "lon": lon,
+        "station": station, "lat": round(lat, 5), "lon": round(lon, 5),
         "ve_mm_yr": round(ve_mm, 2), "vn_mm_yr": round(vn_mm, 2),
         "ve_unc_mm_yr": round(ve_unc_mm, 2), "vn_unc_mm_yr": round(vn_unc_mm, 2),
     }
